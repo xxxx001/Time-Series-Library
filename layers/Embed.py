@@ -32,14 +32,30 @@ class TokenEmbedding(nn.Module):
         padding = 1 if torch.__version__ >= '1.5.0' else 2
         self.tokenConv = nn.Conv1d(in_channels=c_in, out_channels=d_model,
                                    kernel_size=3, padding=padding, padding_mode='circular', bias=False)
+        # LSTM模块，lstm_hidden_dim是LSTM层的隐藏层维度
+        self.lstm = nn.LSTM(input_size=d_model, hidden_size=d_model, num_layers=2,
+                            batch_first=True)
+        # 可选的全连接层，以确保输出的维度是d_model
+        self.fc = nn.Linear(d_model, d_model)
+
         for m in self.modules():
             if isinstance(m, nn.Conv1d):
-                nn.init.kaiming_normal_(
-                    m.weight, mode='fan_in', nonlinearity='leaky_relu')
+                nn.init.kaiming_normal_(m.weight, mode='fan_in', nonlinearity='leaky_relu')
+            elif isinstance(m, nn.LSTM):
+                for name, param in m.named_parameters():
+                    if 'weight_ih' in name:
+                        torch.nn.init.xavier_uniform_(param.data)
+                    elif 'weight_hh' in name:
+                        torch.nn.init.orthogonal_(param.data)
+                    elif 'bias' in name:
+                        param.data.fill_(0)
 
     def forward(self, x):
         x = self.tokenConv(x.permute(0, 2, 1)).transpose(1, 2)
-        return x
+        # LSTM前向传播
+        y, (hn, cn) = self.lstm(x)
+        # y = self.fc(x[:, -1, :])  # 取LSTM最后一个时间步的输出进行全连接
+        return x+y
 
 
 class FixedEmbedding(nn.Module):
@@ -118,6 +134,7 @@ class DataEmbedding(nn.Module):
         self.dropout = nn.Dropout(p=dropout)
 
     def forward(self, x, x_mark):
+       # print('DataEmbedding x:',x.shape,x )
         if x_mark is None:
             x = self.value_embedding(x) + self.position_embedding(x)
         else:

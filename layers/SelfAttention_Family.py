@@ -63,9 +63,9 @@ class FullAttention(nn.Module):
         if self.mask_flag:
             if attn_mask is None:
                 attn_mask = TriangularCausalMask(B, L, device=queries.device)
-
+                print('*full attention attn_mask and shape:',attn_mask,attn_mask.mask)
             scores.masked_fill_(attn_mask.mask, -np.inf)
-
+            print('*full attention scores and shape:',scores,scores.shape,attn_mask.mask)
         A = self.dropout(torch.softmax(scale * scores, dim=-1))
         V = torch.einsum("bhls,bshd->blhd", A, values)
 
@@ -179,11 +179,11 @@ class ProbAttention(nn.Module):
 class AttentionLayer(nn.Module):
     def __init__(self, attention, d_model, n_heads, d_keys=None,
                  d_values=None):
-        super(AttentionLayer, self).__init__()
-
+        super(AttentionLayer, self).__init__()        
+        #print('AttentionLayer,d_model,n_head,d_keys,d_values:',d_model,n_heads,d_keys,d_values)
         d_keys = d_keys or (d_model // n_heads)
         d_values = d_values or (d_model // n_heads)
-
+        #print('AttentionLayer,d_keys,d_values:',d_keys,d_values)
         self.inner_attention = attention
         self.query_projection = nn.Linear(d_model, d_keys * n_heads)
         self.key_projection = nn.Linear(d_model, d_keys * n_heads)
@@ -195,11 +195,11 @@ class AttentionLayer(nn.Module):
         B, L, _ = queries.shape
         _, S, _ = keys.shape
         H = self.n_heads
-
+        #print('queries,keys,values -size:',queries.shape,keys.shape,values.shape)
         queries = self.query_projection(queries).view(B, L, H, -1)
         keys = self.key_projection(keys).view(B, S, H, -1)
         values = self.value_projection(values).view(B, S, H, -1)
-
+       # print('queries,keys,values -size:',queries.shape,keys.shape,values.shape)
         out, attn = self.inner_attention(
             queries,
             keys,
@@ -208,6 +208,7 @@ class AttentionLayer(nn.Module):
             tau=tau,
             delta=delta
         )
+        
         out = out.view(B, L, -1)
 
         return self.out_projection(out), attn

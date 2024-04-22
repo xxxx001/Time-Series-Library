@@ -128,6 +128,36 @@ class M4Meta:
         'Hourly': 10
     }  # from interpretable.gin
 
+@dataclass()
+class FinanceMeta:
+    seasonal_patterns = ['Yearly', 'Quarterly', 'Monthly', 'Weekly', 'Daily', 'Hourly']
+    horizons = [6, 8, 18, 13, 14, 48]
+    frequencies = [1, 4, 12, 1, 1, 24]
+    horizons_map = {
+        'Yearly': 6,
+        'Quarterly': 8,
+        'Monthly': 18,
+        'Weekly': 13,
+        'Daily': 14,
+        'Hourly': 48
+    }  # different predict length
+    frequency_map = {
+        'Yearly': 1,
+        'Quarterly': 4,
+        'Monthly': 12,
+        'Weekly': 1,
+        'Daily': 1,
+        'Hourly': 24
+    }
+    history_size = {
+        'Yearly': 1.5,
+        'Quarterly': 1.5,
+        'Monthly': 1.5,
+        'Weekly': 10,
+        'Daily': 10,
+        'Hourly': 10
+    }  # from interpretable.gin
+
 
 def load_m4_info() -> pd.DataFrame:
     """

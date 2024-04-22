@@ -37,6 +37,7 @@ class EncoderLayer(nn.Module):
         self.activation = F.relu if activation == "relu" else F.gelu
 
     def forward(self, x, attn_mask=None, tau=None, delta=None):
+        print('EncoderLayer attn_mask and shape:',attn_mask , attn_mask)
         new_x, attn = self.attention(
             x, x, x,
             attn_mask=attn_mask,
@@ -59,6 +60,7 @@ class Encoder(nn.Module):
         self.norm = norm_layer
 
     def forward(self, x, attn_mask=None, tau=None, delta=None):
+        print('Encoder attn_mask and shape:',attn_mask , attn_mask)
         # x [B, L, D]
         attns = []
         if self.conv_layers is not None:
@@ -95,7 +97,8 @@ class DecoderLayer(nn.Module):
         self.dropout = nn.Dropout(dropout)
         self.activation = F.relu if activation == "relu" else F.gelu
 
-    def forward(self, x, cross, x_mask=None, cross_mask=None, tau=None, delta=None):
+    def forward(self, x, cross, cross_value, x_mask=None, cross_mask=None, tau=None, delta=None):
+       # print('DncoderLayer cross ,cross_value and shape:',cross , cross_value)
         x = x + self.dropout(self.self_attention(
             x, x, x,
             attn_mask=x_mask,
@@ -104,7 +107,7 @@ class DecoderLayer(nn.Module):
         x = self.norm1(x)
 
         x = x + self.dropout(self.cross_attention(
-            x, cross, cross,
+            x, cross, cross_value,
             attn_mask=cross_mask,
             tau=tau, delta=delta
         )[0])
@@ -123,9 +126,10 @@ class Decoder(nn.Module):
         self.norm = norm_layer
         self.projection = projection
 
-    def forward(self, x, cross, x_mask=None, cross_mask=None, tau=None, delta=None):
+    def forward(self, x, cross, cross_value,x_mask=None, cross_mask=None, tau=None, delta=None):
+       # print('Dncoder x_mask and shape ,attn_mask and shape:',x_mask,x_mask,cross_mask , cross_mask)
         for layer in self.layers:
-            x = layer(x, cross, x_mask=x_mask, cross_mask=cross_mask, tau=tau, delta=delta)
+            x = layer(x, cross,cross_value, x_mask=x_mask, cross_mask=cross_mask, tau=tau, delta=delta)
 
         if self.norm is not None:
             x = self.norm(x)

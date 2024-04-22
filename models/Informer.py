@@ -77,9 +77,9 @@ class Model(nn.Module):
     def long_forecast(self, x_enc, x_mark_enc, x_dec, x_mark_dec):
         enc_out = self.enc_embedding(x_enc, x_mark_enc)
         dec_out = self.dec_embedding(x_dec, x_mark_dec)
-        enc_out, attns = self.encoder(enc_out, attn_mask=None)
-
-        dec_out = self.decoder(dec_out, enc_out, x_mask=None, cross_mask=None)
+        enc_out_key, attns = self.encoder(enc_out, attn_mask=None)
+        enc_out_value,attns = self.encoder(enc_out,attn_mask=None)
+        dec_out = self.decoder(dec_out, enc_out_key,enc_out_value, x_mask=None, cross_mask=None)
 
         return dec_out  # [B, L, D]
     
